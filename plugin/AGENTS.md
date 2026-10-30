@@ -14,7 +14,12 @@ Core analysis is pure, synchronous, no LLM, no deps.
 | Add/edit a rule | `src/core/rules/<category>.ts` | `*Rule.run()` |
 | Register new rule | `src/core/rules/index.ts` | `ALL_RULES` |
 | Complexity keywords | `src/core/scoring.ts` | `HIGH_*`, `LOW_*` |
-| Model catalog/prices | `src/core/models.ts` | `MODEL_CATALOG` (exactly 36) |
+| Task detection | `src/core/task.ts` | `SIGNALS`, `detectTask()` |
+| Task labels/advice | `src/core/i18n.ts` | `task.*`, `advice.*` |
+| Model catalog/prices | `src/core/models.ts` | `MODEL_CATALOG` (verified 35) |
+| Task → model plan | `src/core/models.ts` | `TASK_PLAN`, `pickForTask()` |
+| Capability/value estimate | `src/core/models.ts` | `ModelEntry.intelligence`, `efficiencyFor()` |
+| Go monthly allowance | `src/core/models.ts` + `src/core/usage.ts` | `monthlyLimitFor()`, `GO_MONTHLY` |
 | Model token usage/purpose | `src/core/models.ts` | `ModelEntry.tokenUsage`, `ModelEntry.purpose` |
 | Live model normalization | `src/core/models.ts` | `fromModelInfos()` |
 | Model pick logic | `src/core/models.ts` | `pickModels()`, `pickFromCandidates()` |

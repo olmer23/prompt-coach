@@ -66,14 +66,17 @@ Rebuild after editing `src/gui.tsx`.
 - **Usage** — Go 5h/week/month, budgets, model limits.
 - **Help** — all functions and the 5-step tutorial inside the panel.
 
-The **live pill** above the composer always shows `Coach` or `Coach 72/100 · model`.
+The **live pill** above the composer always shows `Coach` or `Coach 72 · Code → Kimi K2.7 Code`.
 The **Go pill** shows `Go 42% 5h · 31% mo`.
 
-The panel lists **all models actually available in OpenCode** from a curated set of exactly
-**36 models** (3 Zen + 18 Go + 15 OpenRouter Free): name, provider/model id, token usage,
-input/output price per 1M, context window, and purpose. Quality/budget recommendations are
-highlighted. If the catalog is empty, the same static 36-model catalog is used as a fallback.
-Models outside the curated set are filtered out.
+The panel detects the task type (architecture, code, debugging, UI/screenshots, quick edit,
+large output, fallback) and picks the best-fitting model plus a cheaper/backup option.
+For each model it shows **price per 1M tokens**, **ум** (capability, 0–100) and **выгода**
+(capability per dollar, 0–100), the Go monthly allowance, context window and purpose.
+
+The panel lists **all models actually available in OpenCode** from a curated set of
+**35 verified models** (7 Zen + 23 Go + 5 OpenRouter Free). If the catalog is empty, the same
+static catalog is used as a fallback. Models outside the curated set are filtered out.
 
 ## Learn
 - `docs/GUIDE.md` — beginner tutorial

@@ -17,12 +17,18 @@
 | Панель: e / r / s / esc | edit / apply improved / send / close |
 
 ## Задача → модель
-| Задача | Модель |
-|---|---|
-| Форматирование, переименование | DeepSeek Flash / GLM Flash |
-| Тесты, документация | DeepSeek Flash |
-| Фичи, багфиксы | Sonnet / MiniMax M3 |
-| Архитектура | Opus / GPT Pro |
+| Задача | Подходит | Дешевле / резерв |
+|---|---|---|
+| Архитектура / план | DeepSeek V4.1 Flash | GLM-5.3 (умнее) |
+| Написание кода | Kimi K2.7 Code | DeepSeek V4.1 Flash |
+| Отладка / баги | DeepSeek V4.1 Flash | DeepSeek V4 Pro (тупик) |
+| UI / скриншоты | Gemini 4 Argon | GLM-5.3-Flash |
+| Быстрая правка | GLM-5.3-Flash | GPT-6 Luna |
+| Большой файл / вывод | MiniMax M3.1 Flash | MiniMax M3 |
+| Кончились лимиты Go | North Mini Code (free) | Big Pickle |
+
+Цена в панели — за 1M токенов. **Ум** 0–100 — сила модели, **выгода** 0–100 — ум на доллар.
+У флагманов лимит Go часто $15/мес, у flash — $20–80.
 
 ## 5 правил экономии
 1. Одна задача за промпт.

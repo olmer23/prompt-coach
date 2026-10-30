@@ -1,6 +1,7 @@
 import { ALL_RULES } from "./rules";
 import { detectComplexity, overallScore } from "./scoring";
-import { fromCatalog, pickFromCandidates, pickModels } from "./models";
+import { fromCatalog, pickForTask } from "./models";
+import { detectTask } from "./task";
 import { estimateTokens, wordCount, isRussian } from "./tokens";
 import { mapAll } from "./i18n";
 import { improvePrompt, tokenTips } from "./rewrite";
@@ -25,7 +26,9 @@ export function analyze(
 ): Analysis {
   const config: CoachConfig = { ...DEFAULT_CONFIG, ...cfg, weights: { ...DEFAULT_CONFIG.weights, ...(cfg.weights ?? {}) } };
   const catalogKey = candidates?.length
-    ? candidates.map((m) => `${m.providerID}/${m.modelID}`).join("|")
+    ? candidates
+        .map((m) => `${m.providerID}/${m.modelID}:${m.inputPerM}/${m.outputPerM}:${m.intelligence}`)
+        .join("|")
     : "";
   const key = hash(text + JSON.stringify(config.weights) + config.lang + catalogKey);
   const cached = cache.get(key);
@@ -60,10 +63,9 @@ export function analyze(
   });
 
   const complexity = detectComplexity(trimmed, lang);
+  const task = detectTask(trimmed, lang, tokens);
   const score = overallScore(categories, config.weights);
-  const models = candidates?.length
-    ? pickFromCandidates(candidates, complexity, tokens)
-    : pickModels(complexity, tokens, availableModels);
+  const models = pickForTask(candidates ?? [], task.kind, complexity, tokens);
   const available = candidates?.length ? [...candidates] : fromCatalog();
   const missing = categories.flatMap((c) => c.missing);
   const suggestions = categories.flatMap((c) => c.tips).slice(0, 6);
@@ -73,20 +75,21 @@ export function analyze(
   const tips = tokenTips({ ...partial, score }, lang);
 
   const weak = categories.filter((c) => c.score < 60).map((c) => c.key);
-  const oneLine = `${score}/100 · ${complexity} · ${models.budget.name} · ~${tokens} tok` +
+  const oneLine = `${score}/100 · ${complexity} · ${task.label}: ${models.primary.name} · ~${tokens} tok` +
     (weak.length ? ` · fix: ${weak.join(",")}` : "");
 
   const result: Analysis = {
     score,
     tokens,
-    estimatedCostUsd: models.budget.costPerRequestUsd,
+    estimatedCostUsd: models.primary.costPerRequestUsd,
     complexity,
+    task,
     categories,
     missing,
     suggestions,
     tokenTips: tips,
-    recommendedModel: models.quality,
-    alternativeModel: models.budget,
+    recommendedModel: models.primary,
+    alternativeModel: models.alternative,
     availableModels: available,
     improvedPrompt: improved,
     oneLine,

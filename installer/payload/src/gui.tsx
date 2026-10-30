@@ -15,8 +15,8 @@ import {
 import { createEffect, createMemo, createSignal, onMount, Show } from "solid-js";
 import { analyze } from "./core/analyzer";
 import { improvePrompt, llmRewriteInstruction } from "./core/rewrite";
-import { fromModelInfos } from "./core/models";
-import type { Analysis, CoachConfig, ModelCandidate } from "./core/types";
+import { efficiencyFor, findCatalogEntry, fromModelInfos } from "./core/models";
+import type { Analysis, CoachConfig, ModelCandidate, ModelSuggestion } from "./core/types";
 import { DEFAULT_CONFIG } from "./core/types";
 import {
   formatPercent,
@@ -49,10 +49,21 @@ const CSS = `
 .pc-list li{display:flex;gap:8px;align-items:flex-start;color:var(--text-secondary,#6e6e73)}
 .pc-models{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pc-model{border:1px solid rgba(127,127,127,.22);border-radius:10px;padding:8px 10px}
+.pc-model.primary{border-color:rgba(0,113,227,.45);background:rgba(0,113,227,.06)}
 .pc-model b{display:block;font-size:12px}
 .pc-model small{color:var(--text-secondary,#6e6e73)}
 .pc-model .pc-cost{font-weight:600;margin-top:2px}
 .pc-purpose{display:block;font-size:10.5px;color:var(--text-secondary,#6e6e73);margin-top:2px;white-space:normal;line-height:1.35}
+.pc-task{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pc-task-name{font-size:15px;font-weight:700}
+.pc-conf{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(0,113,227,.12);color:#0071e3}
+.pc-advice{font-size:11px;color:var(--text-secondary,#6e6e73);background:rgba(127,127,127,.08);border-radius:8px;padding:7px 9px}
+.pc-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:6px}
+.pc-stat{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-secondary,#6e6e73)}
+.pc-stat b{font-variant-numeric:tabular-nums;color:var(--text-primary,#1d1d1f)}
+.pc-stat .pc-bar{height:4px}
+.pc-price{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.pc-limit{font-size:10.5px;font-variant-numeric:tabular-nums;color:var(--text-secondary,#6e6e73)}
 .pc-model-list{max-height:240px;overflow:auto;border:1px solid rgba(127,127,127,.16);border-radius:10px}
 .pc-model-row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:7px 9px;border-bottom:1px solid rgba(127,127,127,.1)}
 .pc-model-row:last-child{border-bottom:none}
@@ -139,6 +150,58 @@ function fmtK(n: number | undefined): string {
   return String(n);
 }
 
+/** Price per 1M tokens: keep cents, unlike the budget formatter. */
+function fmtPrice(n: number | undefined): string {
+  if (n === undefined || !Number.isFinite(n)) return "—";
+  if (n === 0) return "$0";
+  if (n >= 1) return `$${n.toFixed(n % 1 === 0 ? 0 : 2)}`;
+  return `$${n.toFixed(n < 0.1 ? 3 : 2)}`;
+}
+
+function fmtLimit(n: number | undefined): string {
+  if (n === undefined) return "нет в Go";
+  if (!Number.isFinite(n)) return "∞";
+  return `$${Math.round(n)}/мес`;
+}
+
+function fmtInt(n: number | undefined): string {
+  return n === undefined ? "—" : `${n}/100`;
+}
+
+function altLabel(primary: ModelSuggestion, alt: ModelSuggestion): string {
+  const cheaper = alt.costPerRequestUsd < primary.costPerRequestUsd;
+  const smarter = (alt.intelligence ?? 0) > (primary.intelligence ?? 0);
+  if (cheaper && smarter) return "Дешевле и умнее";
+  if (smarter) return "Резерв: умнее";
+  if (cheaper) return "Дешевле / резерв";
+  return "Резерв";
+}
+
+function ModelCard(props: { label: string; model: ModelSuggestion; accent?: boolean }) {
+  const m = props.model;
+  return (
+    <div class={"pc-model" + (props.accent ? " primary" : "")}>
+      <small>{props.label}</small>
+      <b>{m.name}</b>
+      <div class="pc-price">{fmtPrice(m.inputPerM)} in · {fmtPrice(m.outputPerM)} out за 1M</div>
+      <div class="pc-cost">~${m.costPerRequestUsd}/запрос · лимит {fmtLimit(m.monthlyLimit)}</div>
+      <div class="pc-stats">
+        <span class="pc-stat">
+          Ум
+          <span class="pc-bar"><i style={{ width: (m.intelligence ?? 0) + "%", background: barColor(m.intelligence ?? 0) }} /></span>
+          <b>{fmtInt(m.intelligence)}</b>
+        </span>
+        <span class="pc-stat">
+          Выгода
+          <span class="pc-bar"><i style={{ width: (m.efficiency ?? 0) + "%", background: barColor(m.efficiency ?? 0) }} /></span>
+          <b>{fmtInt(m.efficiency)}</b>
+        </span>
+      </div>
+      <span class="pc-purpose">{m.purpose ?? ""}</span>
+    </div>
+  );
+}
+
 function UsageMeterRow(props: { label: string; meter: UsageMeter; lang: "ru" | "en" }) {
   return (
     <div class="pu-meter">
@@ -197,6 +260,10 @@ function UsageView(props: PanelProps & { usage: () => UsageLimits | null; refres
     const m = model();
     return m ? goLimitFor(String(m.modelID ?? m.id), props.plan) : undefined;
   };
+  const meta = () => {
+    const m = model();
+    return m ? findCatalogEntry(String(m.providerID ?? ""), String(m.modelID ?? m.id ?? "")) : undefined;
+  };
 
   return (
     <div class="pu-root">
@@ -233,6 +300,11 @@ function UsageView(props: PanelProps & { usage: () => UsageLimits | null; refres
               <div class="pu-row"><small>Context</small><b>{fmtK(m().limit?.context)}</b></div>
               <div class="pu-row"><small>Max output</small><b>{fmtK(m().limit?.output)}</b></div>
               <div class="pu-row"><small>Price / 1M</small><b>{formatUsd(m().cost?.[0]?.input ?? 0)} in · {formatUsd(m().cost?.[0]?.output ?? 0)} out</b></div>
+              <Show when={meta()}>
+                {(e) => (
+                  <div class="pu-row"><small>Capability</small><b>{e().intelligence}/100 · value {efficiencyFor(e())}/100</b></div>
+                )}
+              </Show>
               <div class="pu-row">
                 <small>Go monthly</small>
                 <b>{modelGo() === Infinity ? "∞" : modelGo() !== undefined ? `${formatUsd(modelGo()!)}/mo` : "—"}</b>
@@ -286,12 +358,18 @@ function CoachView(props: PanelProps) {
     const list = analysis().availableModels ?? [];
     const q = analysis().recommendedModel.id;
     const b = analysis().alternativeModel.id;
+    const task = analysis().task.kind;
     const rank = (m: ModelCandidate) => {
       const id = `${m.providerID}/${m.modelID}`;
-      return id === q ? 0 : id === b ? 1 : 2;
+      if (id === q) return 0;
+      if (id === b) return 1;
+      return m.tasks?.includes(task) ? 2 : 3;
     };
     return [...list].sort(
-      (x, y) => rank(x) - rank(y) || x.inputPerM + x.outputPerM - (y.inputPerM + y.outputPerM),
+      (x, y) =>
+        rank(x) - rank(y) ||
+        (y.intelligence ?? 0) - (x.intelligence ?? 0) ||
+        x.inputPerM + x.outputPerM - (y.inputPerM + y.outputPerM),
     );
   });
   const [llmBusy, setLlmBusy] = createSignal(false);
@@ -357,6 +435,8 @@ function CoachView(props: PanelProps) {
           <b>Prompt Coach — all functions in the panel</b>
           <ul>
             <li>Live score + categories update as you type.</li>
+            <li>Task detection picks a model for architecture, coding, debugging, UI, quick edits and long output.</li>
+            <li>Prices are per 1M tokens; Ум and Выгода are 0–100 estimates (capability and capability-per-dollar).</li>
             <li><b>Improve with LLM → Apply</b>: one click, writes the result into the composer.</li>
             <li><b>Apply template</b>: free structured prompt with placeholders.</li>
             <li><b>Apply improved</b>: apply the current preview (LLM or template).</li>
@@ -375,12 +455,20 @@ function CoachView(props: PanelProps) {
         <div>
           <div class="pc-score">{analysis().score}<span style={{ "font-size": "14px", "font-weight": "400" }}>/100</span></div>
           <div style={{ color: "var(--text-secondary,#6e6e73)" }}>
-            {analysis().complexity} · ~{analysis().tokens} tok · ${analysis().alternativeModel.costPerRequestUsd}/req
+            {analysis().complexity} · {analysis().task.label} · ~{analysis().tokens} tok · ${analysis().recommendedModel.costPerRequestUsd}/req
           </div>
         </div>
         <span class={"pc-badge " + tone(analysis().score)}>
           {analysis().score >= 80 ? "Ready" : analysis().score >= 50 ? "Fair" : "Weak"}
         </span>
+      </div>
+
+      <div>
+        <div class="pc-task">
+          <span class="pc-task-name">{analysis().task.label}</span>
+          <span class="pc-conf">уверенность {Math.round(analysis().task.confidence * 100)}%</span>
+        </div>
+        <div class="pc-advice" style={{ "margin-top": "6px" }}>{analysis().task.advice}</div>
       </div>
 
       <div>
@@ -403,20 +491,10 @@ function CoachView(props: PanelProps) {
       </div>
 
       <div>
-        <div class="pc-h">Models</div>
+        <div class="pc-h">Модель под задачу</div>
         <div class="pc-models">
-          <div class="pc-model">
-            <small>Quality</small>
-            <b>{analysis().recommendedModel.name}</b>
-            <div class="pc-cost">${analysis().recommendedModel.costPerRequestUsd}/req · {analysis().recommendedModel.tokenUsage ?? "—"} tok</div>
-            <span class="pc-purpose">{analysis().recommendedModel.purpose ?? ""}</span>
-          </div>
-          <div class="pc-model">
-            <small>Budget</small>
-            <b>{analysis().alternativeModel.name}</b>
-            <div class="pc-cost">${analysis().alternativeModel.costPerRequestUsd}/req · {analysis().alternativeModel.tokenUsage ?? "—"} tok</div>
-            <span class="pc-purpose">{analysis().alternativeModel.purpose ?? ""}</span>
-          </div>
+          <ModelCard label={`Подходит: ${analysis().task.short}`} model={analysis().recommendedModel} accent />
+          <ModelCard label={altLabel(analysis().recommendedModel, analysis().alternativeModel)} model={analysis().alternativeModel} />
         </div>
       </div>
 
@@ -427,6 +505,7 @@ function CoachView(props: PanelProps) {
             const id = `${m.providerID}/${m.modelID}`;
             const isQuality = id === analysis().recommendedModel.id;
             const isBudget = id === analysis().alternativeModel.id;
+            const fitsTask = m.tasks?.includes(analysis().task.kind);
             return (
               <div class="pc-model-row">
                 <div class="pc-model-main">
@@ -435,11 +514,12 @@ function CoachView(props: PanelProps) {
                   <span class="pc-purpose">{m.purpose ?? ""}</span>
                 </div>
                 <div class="pc-model-meta">
-                  <span>{m.tokenUsage ?? "—"} tok</span>
-                  <span>{formatUsd(m.inputPerM)} in · {formatUsd(m.outputPerM)} out</span>
-                  <span>{fmtK(m.context)} ctx</span>
-                  {isQuality ? <span class="pc-tag q">quality</span> : null}
-                  {isBudget ? <span class="pc-tag b">budget</span> : null}
+                  <span class="pc-price">{fmtPrice(m.inputPerM)} in · {fmtPrice(m.outputPerM)} out за 1M</span>
+                  <span>ум {m.intelligence} · выгода {m.efficiency ?? "—"}</span>
+                  <span>{fmtK(m.context)} ctx · {fmtLimit(m.monthlyLimit)}</span>
+                  {fitsTask ? <span class="pc-tag q">для задачи</span> : null}
+                  {isQuality ? <span class="pc-tag q">подходит</span> : null}
+                  {isBudget ? <span class="pc-tag b">дешевле</span> : null}
                 </div>
               </div>
             );
@@ -536,9 +616,9 @@ export default Plugin.define({
         if (value.trim().startsWith("/")) return undefined;
         const a = value.trim() ? analyze(value, cfg) : null;
         return {
-          label: a ? `Coach ${a.score}/100 · ${a.alternativeModel.name}` : "Coach",
+          label: a ? `Coach ${a.score} · ${a.task.short} → ${a.recommendedModel.name}` : "Coach",
           tone: a ? (a.score >= 80 ? "success" : a.score >= 50 ? "warning" : "danger") : undefined,
-          title: a ? a.oneLine : "Open Prompt Coach: analyze, improve with LLM, usage",
+          title: a ? `${a.oneLine}\n${a.task.advice}\n${a.recommendedModel.reason}` : "Open Prompt Coach: analyze, improve with LLM, usage",
           run: () => ctx.layout.open(`${ctx.id}:coach`, input.session),
         };
       },

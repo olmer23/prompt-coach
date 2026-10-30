@@ -4,7 +4,8 @@
             ┌──────────────────────────────┐
             │          src/core            │
             │  rules → analyzer → Analysis │
-            │  scoring / models / rewrite  │
+            │  scoring / task / models     │
+            │  rewrite                     │
             └───────┬──────────┬───────────┘
                     │          │
         ┌───────────▼───┐  ┌───▼────────────┐

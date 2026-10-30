@@ -14,10 +14,23 @@ function cfgOf(ctx: Ctx): CoachConfig {
   return { ...DEFAULT_CONFIG, ...o, weights: { ...DEFAULT_CONFIG.weights, ...(o.weights ?? {}) } };
 }
 
-function fmtCtx(n: number): string {
+function fmtCtx(n: number | undefined): string {
   if (!n || !Number.isFinite(n)) return "—";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
   return `${Math.round(n / 1000)}K`;
+}
+
+function fmtPrice(n: number | undefined): string {
+  if (n === undefined || !Number.isFinite(n)) return "—";
+  if (n === 0) return "$0";
+  if (n >= 1) return `$${n.toFixed(n % 1 === 0 ? 0 : 2)}`;
+  return `$${n.toFixed(n < 0.1 ? 3 : 2)}`;
+}
+
+function fmtLimit(n: number | undefined): string {
+  if (n === undefined) return "—";
+  if (!Number.isFinite(n)) return "∞";
+  return `$${Math.round(n)}/mo`;
 }
 
 /** Defensive text extraction from a session message (shape may vary). */
@@ -63,7 +76,7 @@ function CoachBar(props: { sessionID: string }) {
     <Show when={analysis()} fallback={<text fg={ctx.theme.text.muted}>Prompt Coach: /coach — analyze · /coach help</text>}>
       {(a) => (
         <text fg={a().score >= 80 ? ctx.theme.text.success : a().score >= 50 ? ctx.theme.text.warning : ctx.theme.text.error}>
-          {"Coach " + a().oneLine + "  ·  /coach — improve"}
+          {"Coach " + a().score + "/100 · " + a().task.short + " → " + a().recommendedModel.name + " · " + a().oneLine}
         </text>
       )}
     </Show>
@@ -200,10 +213,13 @@ function CoachPanel(props: { panel: { sessionID: string; close: () => void } }) 
   return (
     <box flexDirection="column">
       <text>{"Prompt Coach — " + analysis().score + "/100 · " + analysis().complexity + " · ~" + analysis().tokens + " tok"}</text>
-      <text>{"Model: " + analysis().recommendedModel.name + " (quality) / " + analysis().alternativeModel.name + " (budget)"}</text>
+      <text>{"Task: " + analysis().task.label + " (" + Math.round(analysis().task.confidence * 100) + "%) · " + analysis().task.advice}</text>
+      <text>{"Model: " + analysis().recommendedModel.name + " (fits) / " + analysis().alternativeModel.name + " (reserve)"}</text>
+      <text>{"  " + fmtPrice(analysis().recommendedModel.inputPerM) + " in · " + fmtPrice(analysis().recommendedModel.outputPerM) + " out per 1M · ум " + (analysis().recommendedModel.intelligence ?? "—") + "/100 · выгода " + (analysis().recommendedModel.efficiency ?? "—") + "/100 · Go " + fmtLimit(analysis().recommendedModel.monthlyLimit)}</text>
+      <text>{"  ~" + formatUsd(analysis().recommendedModel.costPerRequestUsd) + "/req · " + fmtCtx(analysis().recommendedModel.context) + " ctx"}</text>
       <text>{"Available models (" + (analysis().availableModels?.length ?? 0) + "):"}</text>
       {(analysis().availableModels ?? []).slice(0, 8).map((m) => (
-        <text>{"  • " + m.name + " · " + (m.tokenUsage ?? "—") + " tok · " + formatUsd(m.inputPerM) + "/" + formatUsd(m.outputPerM) + " · " + fmtCtx(m.context) + " · " + (m.purpose ?? "")}</text>
+        <text>{"  • " + m.name + " · " + fmtPrice(m.inputPerM) + "/" + fmtPrice(m.outputPerM) + " per 1M · ум " + m.intelligence + " · выгода " + (m.efficiency ?? "—") + " · " + fmtCtx(m.context) + " · " + fmtLimit(m.monthlyLimit)}</text>
       ))}
       {(analysis().availableModels?.length ?? 0) > 8 ? (
         <text>{"  … +" + ((analysis().availableModels?.length ?? 0) - 8) + " more"}</text>
@@ -230,7 +246,7 @@ const TUTORIAL = [
   "1/5. Score 0–100 shows prompt quality. Green ≥80, yellow 50–79, red <50.",
   "2/5. Good prompt = Role + Task + Context + Constraints + Success criteria.",
   "3/5. Type /coach <your prompt> to analyze before sending. In the panel: [e] edit, [r] apply improved, [s] send.",
-  "4/5. Coach suggests a model: simple task → cheap model (DeepSeek Flash), complex → frontier (Opus).",
+  "4/5. Coach detects the task and picks a model: code → Kimi K2.7, debug → DeepSeek Flash, UI → Gemini 4 Argon, long output → MiniMax M3.1 Flash.",
   "5/5. Save tokens: one task per prompt, narrow context, use /undo instead of regenerating. Try /coach fix the bug",
 ];
 

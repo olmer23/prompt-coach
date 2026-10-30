@@ -21,16 +21,31 @@ const TUTORIAL_TEXT = [
   "1/5. Score 0–100: green ≥80, yellow 50–79, red <50.",
   "2/5. Formula: Role + Task + Context + Constraints + Success criteria.",
   "3/5. Try `/coach сделай форму входа` — see what is missing.",
-  "4/5. Apply the fix: `/coach improve сделай форму входа`.",
+  "4/5. Coach detects the task and picks a model: code → Kimi K2.7, debug → DeepSeek Flash, UI → Gemini, long output → MiniMax.",
   "5/5. Save tokens: one task per prompt, narrow context, cheap model for routine.",
 ].join("\n");
+
+function usdPerM(n: number | undefined): string {
+  if (n === undefined || !Number.isFinite(n)) return "—";
+  if (n === 0) return "$0";
+  return n >= 1 ? `$${n.toFixed(n % 1 === 0 ? 0 : 2)}` : `$${n.toFixed(n < 0.1 ? 3 : 2)}`;
+}
+
+function goLimit(n: number | undefined): string {
+  if (n === undefined) return "—";
+  if (!Number.isFinite(n)) return "∞";
+  return `$${Math.round(n)}/mo`;
+}
 
 function formatReport(a: Analysis): string {
   const cats = a.categories.map((c) => `- ${c.key}: ${c.score}/100`).join("\n");
   const missing = a.missing.length ? a.missing.map((m) => `- ${m}`).join("\n") : "- none";
   const tips = a.suggestions.length ? a.suggestions.slice(0, 4).map((m) => `- ${m}`).join("\n") : "- none";
+  const model = a.recommendedModel;
+  const alt = a.alternativeModel;
   return [
     `**Prompt Coach — ${a.score}/100** (${a.complexity}, ~${a.tokens} tok)`,
+    `**Task:** ${a.task.label} · ${a.task.advice}`,
     "",
     "**Categories**",
     cats,
@@ -41,7 +56,9 @@ function formatReport(a: Analysis): string {
     "**Tips**",
     tips,
     "",
-    `**Models:** ${a.recommendedModel.name} (quality) / ${a.alternativeModel.name} (budget)`,
+    "**Model for the task**",
+    `- Fits: **${model.name}** — ${usdPerM(model.inputPerM)} in / ${usdPerM(model.outputPerM)} out per 1M, ум ${model.intelligence ?? "—"}/100, выгода ${model.efficiency ?? "—"}/100, Go ${goLimit(model.monthlyLimit)}, ~$${model.costPerRequestUsd}/request`,
+    `- Alternative: ${alt.name} — ${usdPerM(alt.inputPerM)} in / ${usdPerM(alt.outputPerM)} out per 1M, ум ${alt.intelligence ?? "—"}/100, выгода ${alt.efficiency ?? "—"}/100, ~$${alt.costPerRequestUsd}/request`,
     "",
     "**Improved prompt**",
     "```",

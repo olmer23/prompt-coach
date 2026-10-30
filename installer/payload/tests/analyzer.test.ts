@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { analyze } from "../src/core/analyzer";
 import { estimateTokens } from "../src/core/tokens";
 import { detectComplexity } from "../src/core/scoring";
+import { detectTask } from "../src/core/task";
 import { improvePrompt, llmRewriteInstruction } from "../src/core/rewrite";
-import { fromModelInfos, pickFromCandidates, MODEL_CATALOG } from "../src/core/models";
+import { fromCatalog, fromModelInfos, pickFromCandidates, pickForTask, MODEL_CATALOG } from "../src/core/models";
 
 const GOOD_RU =
   "Ты senior-разработчик. Исправь функцию handleSubmit в src/components/Login.tsx (React). Не меняй стили и публичный API. Критерий: npm test проходит, форма валидирует email.";
@@ -70,6 +71,77 @@ describe("complexity", () => {
   });
 });
 
+describe("task detection", () => {
+  it("detects architecture", () => {
+    assert.equal(detectTask("Спроектируй архитектуру сервиса и план миграции", "ru").kind, "arch");
+  });
+  it("detects coding", () => {
+    assert.equal(detectTask("Напиши компонент формы входа в src/Login.tsx", "ru").kind, "code");
+  });
+  it("detects debugging", () => {
+    assert.equal(detectTask("Исправь баг: приложение падает с ошибкой в консоли", "ru").kind, "debug");
+  });
+  it("detects UI work", () => {
+    assert.equal(detectTask("Посмотри скриншот интерфейса из Figma и поправь вёрстку", "ru").kind, "ui");
+  });
+  it("detects quick edits", () => {
+    assert.equal(detectTask("Переименуй переменную x в y", "ru").kind, "quick");
+  });
+  it("detects long output", () => {
+    assert.equal(detectTask("Сгенерируй весь файл целиком, большой файл на 2000 строк", "ru").kind, "long");
+  });
+  it("falls back to general", () => {
+    assert.equal(detectTask("привет", "ru").kind, "general");
+  });
+});
+
+describe("task-based model choice", () => {
+  const catalog = fromCatalog();
+
+  it("picks the coding model for code", () => {
+    const picked = pickForTask(catalog, "code", "medium", 1000);
+    assert.equal(picked.primary.id, "opencode-go/kimi-k2.7-code");
+    assert.equal(picked.alternative.id, "opencode-go/deepseek-v4.1-flash");
+  });
+
+  it("picks the cheap flash for debugging", () => {
+    const picked = pickForTask(catalog, "debug", "high", 1000);
+    assert.equal(picked.primary.id, "opencode-go/deepseek-v4.1-flash");
+    assert.equal(picked.alternative.id, "opencode-go/deepseek-v4-pro");
+  });
+
+  it("picks the smart backup for architecture", () => {
+    const picked = pickForTask(catalog, "arch", "high", 1000);
+    assert.equal(picked.primary.id, "opencode-go/deepseek-v4.1-flash");
+    assert.equal(picked.alternative.id, "opencode-go/glm-5.3");
+  });
+
+  it("picks the multimodal model for UI", () => {
+    assert.equal(pickForTask(catalog, "ui", "medium", 1000).primary.id, "opencode-go/gemini-4-argon");
+  });
+
+  it("picks the cheapest flash for quick edits", () => {
+    assert.equal(pickForTask(catalog, "quick", "low", 100).primary.id, "opencode-go/glm-5.3-flash");
+  });
+
+  it("picks the long-output model", () => {
+    assert.equal(pickForTask(catalog, "long", "medium", 1000).primary.id, "opencode-go/minimax-m3.1-flash");
+  });
+
+  it("picks a free fallback when limits are gone", () => {
+    assert.equal(pickForTask(catalog, "fallback", "medium", 100).primary.id, "openrouter/cohere/north-mini-code:free");
+  });
+
+  it("shows price per 1M and capability", () => {
+    const s = pickForTask(catalog, "code", "medium", 1000).primary;
+    assert.equal(s.inputPerM, 0.95);
+    assert.equal(s.outputPerM, 4);
+    assert.ok((s.intelligence ?? 0) > 80);
+    assert.ok((s.efficiency ?? 0) > 0);
+    assert.equal(s.monthlyLimit, 60);
+  });
+});
+
 describe("rewrite", () => {
   it("keeps original text", () => {
     const a = analyze("fix login bug", { lang: "en" });
@@ -88,26 +160,29 @@ describe("rewrite", () => {
 describe("real model catalog", () => {
   const infos = [
     { providerID: "opencode-go", modelID: "glm-5.3-flash", name: "GLM-5.3-Flash", enabled: true, status: "active", cost: [{ input: 0.15, output: 0.5 }], limit: { context: 1_000_000, output: 8_000 } },
-    { providerID: "opencode-go", modelID: "kimi-k3", name: "Kimi K3", enabled: true, status: "active", cost: [{ input: 3, output: 15 }], limit: { context: 262_000, output: 16_000 } },
-    { providerID: "opencode-go", modelID: "glm-5.3", name: "GLM-5.3", enabled: false, status: "active", cost: [{ input: 1.4, output: 4.4 }], limit: { context: 1_000_000 } },
-    { providerID: "opencode-go", modelID: "kimi-k3.1-pro", name: "Kimi K3.1 Pro", enabled: true, status: "deprecated", cost: [{ input: 2, output: 10 }], limit: { context: 262_000 } },
+    { providerID: "opencode-go", modelID: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash", enabled: true, status: "active", cost: [{ input: 0.15, output: 0.6 }], limit: { context: 1_000_000, output: 384_000 } },
+    { providerID: "opencode-go", modelID: "glm-5.3", name: "GLM-5.3", enabled: true, status: "active", cost: [{ input: 1.4, output: 4.4 }], limit: { context: 1_000_000 } },
+    { providerID: "opencode-go", modelID: "kimi-k3.1-pro", name: "Kimi K3.1 Pro", enabled: true, status: "deprecated", cost: [{ input: 2, output: 10 }], limit: { context: 1_048_576 } },
     { providerID: "openai", modelID: "outside-list", name: "Outside", enabled: true, status: "active", cost: [{ input: 1, output: 1 }], limit: { context: 100_000 } },
   ];
 
-  it("has exactly 36 curated models without duplicates", () => {
-    assert.equal(MODEL_CATALOG.length, 36);
-    assert.equal(new Set(MODEL_CATALOG.map((m) => m.id)).size, 36);
-    assert.equal(MODEL_CATALOG.filter((m) => m.category === "zen").length, 3);
-    assert.equal(MODEL_CATALOG.filter((m) => ["flash", "code", "smart", "multimodal", "fast"].includes(m.category ?? "")).length, 18);
-    assert.equal(MODEL_CATALOG.filter((m) => m.category === "free").length, 15);
+  it("has a curated catalog without duplicates", () => {
+    assert.equal(MODEL_CATALOG.length, 35);
+    assert.equal(new Set(MODEL_CATALOG.map((m) => m.id)).size, 35);
+    assert.equal(MODEL_CATALOG.filter((m) => m.category === "zen").length, 7);
+    assert.equal(MODEL_CATALOG.filter((m) => m.category === "free").length, 5);
+    assert.equal(MODEL_CATALOG.filter((m) => ["flash", "code", "smart", "multimodal", "fast"].includes(m.category ?? "")).length, 23);
   });
 
   it("normalizes and filters live models", () => {
     const list = fromModelInfos(infos);
-    assert.equal(list.length, 2);
-    assert.equal(list[0].name, "GLM-5.3-Flash");
-    assert.equal(list[0].context, 1_000_000);
-    assert.equal(list[0].inputPerM, 0.15);
+    assert.equal(list.length, 3);
+    assert.equal(list[0].name, "DeepSeek V4.1 Flash");
+    assert.equal(list[1].name, "GLM-5.3");
+    assert.equal(list[2].name, "GLM-5.3-Flash");
+    assert.equal(list[2].context, 1_000_000);
+    assert.equal(list[2].inputPerM, 0.15);
+    assert.ok((list[2].intelligence ?? 0) > 0);
   });
 
   it("picks quality and budget from the live list", () => {
@@ -121,14 +196,15 @@ describe("real model catalog", () => {
 
   it("analyze exposes availableModels without breaking fields", () => {
     const list = fromModelInfos(infos);
-    const a = analyze("fix src/a.ts and run npm test", { lang: "en" }, undefined, list);
-    assert.equal(a.availableModels?.length, 2);
+    const a = analyze("fix the bug in src/a.ts and run npm test", { lang: "en" }, undefined, list);
+    assert.equal(a.availableModels?.length, 3);
     assert.ok(a.recommendedModel.name);
     assert.ok(a.alternativeModel.name);
+    assert.equal(a.task.kind, "debug");
   });
 
   it("falls back to the static catalog when the list is empty", () => {
     const a = analyze("fix src/a.ts", { lang: "en" }, undefined, []);
-    assert.equal(a.availableModels?.length, 36);
+    assert.equal(a.availableModels?.length, 35);
   });
 });

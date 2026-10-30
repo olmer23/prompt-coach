@@ -26,6 +26,57 @@ export const STRINGS: Dict = {
   long: { ru: "Сократите текст — каждый токен стоит денег", en: "Trim text — every token costs" },
   repeat: { ru: "Уберите повторы", en: "Remove repetitions" },
   codeblock: { ru: "Вставляйте только нужные фрагменты кода", en: "Paste only needed code fragments" },
+
+  "task.arch": { ru: "Архитектура / планирование", en: "Architecture / planning" },
+  "task.code": { ru: "Написание кода", en: "Coding" },
+  "task.debug": { ru: "Отладка / баги", en: "Debugging" },
+  "task.ui": { ru: "UI / скриншоты", en: "UI / screenshots" },
+  "task.quick": { ru: "Быстрая правка", en: "Quick edit" },
+  "task.long": { ru: "Большой файл / вывод", en: "Large file / output" },
+  "task.fallback": { ru: "Резерв при лимитах", en: "Fallback on limits" },
+  "task.general": { ru: "Общая задача", en: "General task" },
+
+  "task.short.arch": { ru: "План", en: "Plan" },
+  "task.short.code": { ru: "Код", en: "Code" },
+  "task.short.debug": { ru: "Отладка", en: "Debug" },
+  "task.short.ui": { ru: "UI", en: "UI" },
+  "task.short.quick": { ru: "Правка", en: "Quick" },
+  "task.short.long": { ru: "Объём", en: "Long" },
+  "task.short.fallback": { ru: "Резерв", en: "Fallback" },
+  "task.short.general": { ru: "Задача", en: "Task" },
+
+  "advice.arch": {
+    ru: "Планирование — 1–2 длинных запроса. Не гоняйте флагман в цикле.",
+    en: "Planning is 1–2 long requests. Do not loop a flagship model.",
+  },
+  "advice.code": {
+    ru: "Пишите модулями, не весь проект за один запрос.",
+    en: "Write in modules, not the whole project in one request.",
+  },
+  "advice.debug": {
+    ru: "Сначала дешёвый flash на рутину; флагман — только когда зашли в тупик.",
+    en: "Start with a cheap flash; use a flagship only when stuck.",
+  },
+  "advice.ui": {
+    ru: "Режьте скриншоты и уменьшайте изображения — они жгут токены.",
+    en: "Crop screenshots and shrink images — they burn tokens.",
+  },
+  "advice.quick": {
+    ru: "Не тратьте флагманы на мелочь — хватит flash-модели.",
+    en: "Do not spend flagships on small edits — a flash model is enough.",
+  },
+  "advice.long": {
+    ru: "Генерируйте частями: 512k выхода за раз дорого и рискованно.",
+    en: "Generate in chunks: 512k of output in one go is expensive and risky.",
+  },
+  "advice.fallback": {
+    ru: "Резерв: бесплатный код-роутер OpenRouter. Часто нужен VPN, 50 запросов/сутки.",
+    en: "Fallback: free OpenRouter code router. VPN is often needed, 50 requests/day.",
+  },
+  "advice.general": {
+    ru: "Один запрос = один шаг. Разбивайте работу на модули.",
+    en: "One request = one step. Split work into modules.",
+  },
 };
 
 export function t(key: string, lang: Lang): string {

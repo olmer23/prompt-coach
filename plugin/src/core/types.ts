@@ -2,6 +2,29 @@
 
 export type Complexity = "low" | "medium" | "high";
 
+/** Task type detected from the prompt text. Drives the model recommendation. */
+export type TaskKind =
+  | "arch"
+  | "code"
+  | "debug"
+  | "ui"
+  | "quick"
+  | "long"
+  | "fallback"
+  | "general";
+
+export interface TaskInfo {
+  kind: TaskKind;
+  /** 0..1, how sure the detector is */
+  confidence: number;
+  /** localized label, e.g. "Написание кода" */
+  label: string;
+  /** short localized label for pills, e.g. "Код" */
+  short: string;
+  /** localized one-line advice on how to spend the model's limits */
+  advice: string;
+}
+
 export type CategoryKey =
   | "clarity"
   | "context"
@@ -27,6 +50,18 @@ export interface ModelSuggestion {
   context?: number;
   tokenUsage?: string;
   purpose?: string;
+  /** USD per 1M input tokens */
+  inputPerM?: number;
+  /** USD per 1M output tokens */
+  outputPerM?: number;
+  /** 0..100 estimate of general capability (curated, not a benchmark) */
+  intelligence?: number;
+  /** 0..100 relative value: capability per dollar */
+  efficiency?: number;
+  /** Go monthly allowance in USD; Infinity for free/unlimited models */
+  monthlyLimit?: number;
+  /** why this model fits the detected task */
+  fit?: string;
 }
 
 /** A model that is actually available in the current OpenCode catalog. */
@@ -42,6 +77,14 @@ export interface ModelCandidate {
   category?: "zen" | "flash" | "code" | "smart" | "multimodal" | "fast" | "free";
   tokenUsage?: string;
   purpose?: string;
+  /** 0..100 estimate of general capability (curated, not a benchmark) */
+  intelligence: number;
+  /** 0..100 relative value: capability per dollar */
+  efficiency?: number;
+  /** task types this model is good at */
+  tasks?: TaskKind[];
+  /** Go monthly allowance in USD; Infinity for free/unlimited models */
+  monthlyLimit?: number;
 }
 
 export interface Analysis {
@@ -52,6 +95,8 @@ export interface Analysis {
   /** estimated USD for recommended model */
   estimatedCostUsd: number;
   complexity: Complexity;
+  /** task type detected from the prompt */
+  task: TaskInfo;
   categories: CategoryScore[];
   missing: string[];
   suggestions: string[];
