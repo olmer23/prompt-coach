@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Coach — тренажёр промптов и плагин для OpenCode</title>
+<meta name="description" content="Оценка промпта 0–100 в реальном времени, подсказки, подбор модели, экономия токенов. Тренажёр в браузере и плагин для OpenCode.">
+<style>
+  :root{
+    --bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--accent:#0071e3;--accent-soft:#e8f1fb;
+    --border:#e5e5ea;--shadow:0 4px 24px rgba(0,0,0,.06);--radius:20px;
+    --green:#34c759;--orange:#ff9f0a;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#000;--card:#1c1c1e;--text:#f5f5f7;--muted:#a1a1a6;--accent:#0a84ff;
+      --accent-soft:#0d2b4d;--border:#2c2c2e;--shadow:0 4px 24px rgba(0,0,0,.4)}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:56px 24px 72px}
+  header{text-align:center;margin-bottom:44px}
+  .logo{display:inline-flex;align-items:center;gap:10px;font-size:.8rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+  h1{font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em}
+  .lead{font-size:1.06rem;color:var(--muted);max-width:620px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:12px;transition:.18s}
+  .card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .card h2{margin:0;font-size:1.18rem}
+  .card p{margin:0;color:var(--muted);font-size:.95rem;flex:1}
+  .tag{align-self:flex-start;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:999px}
+  .t-blue{background:var(--accent-soft);color:var(--accent)}
+  .t-green{background:rgba(52,199,89,.14);color:var(--green)}
+  .t-orange{background:rgba(255,159,10,.16);color:var(--orange)}
+  a.btn{display:inline-block;text-align:center;text-decoration:none;padding:10px 18px;border-radius:999px;
+    font-weight:600;font-size:.92rem;background:var(--accent);color:#fff;transition:.15s}
+  a.btn:hover{filter:brightness(1.1)}
+  a.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--border)}
+  a.btn.ghost:hover{background:var(--accent-soft)}
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:36px}
+  @media(max-width:760px){.features{grid-template-columns:1fr}}
+  .feat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .feat b{display:block;font-size:.95rem;margin-bottom:4px}
+  .feat span{color:var(--muted);font-size:.86rem}
+  .install{margin-top:36px;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+  .install h2{margin:0 0 8px;font-size:1.18rem}
+  .install p{margin:0 0 14px;color:var(--muted);font-size:.95rem}
+  ol{margin:0 0 16px;padding-left:20px;color:var(--muted);font-size:.95rem}
+  ol li{margin-bottom:6px}
+  ol b{color:var(--text)}
+  code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:var(--accent-soft);
+    padding:2px 6px;border-radius:6px;color:var(--accent)}
+  footer{margin-top:48px;text-align:center;color:var(--muted);font-size:.85rem}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⌘ Prompt Coach</div>
+    <h1>Промпты, которые работают<br>с первого раза</h1>
+    <p class="lead">Оценка 0–100 ещё до отправки, разбор того, чего не хватает, подбор модели
+      и экономия токенов. В браузере — без установки, или прямо в OpenCode.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="trainer.html" style="text-decoration:none;color:inherit">
+      <span class="tag t-blue">Без установки</span>
+      <h2>Тренажёр промптов</h2>
+      <p>Разбор в реальном времени, символ за символом: оценка, пропущенные блоки,
+        рекомендуемая модель, подсказки по токенам и готовый улучшенный промпт.</p>
+      <span class="btn">Открыть тренажёр →</span>
+    </a>
+
+    <a class="card" href="opencode-guide.html" style="text-decoration:none;color:inherit">
+      <span class="tag t-orange">Гайд</span>
+      <h2>Вайбкодинг с OpenCode</h2>
+      <p>Что такое вайбкодинг, к чему подключать OpenCode, OpenRouter, подписки Go и Zen,
+        выбор модели под задачу и способы не улететь за лимиты.</p>
+      <span class="btn ghost">Читать гайд →</span>
+    </a>
+  </div>
+
+  <div class="features">
+    <div class="feat"><b>Оценка 0–100</b><span>Вес по категориям: контекст, рамки, критерии, ограничения, ясность</span></div>
+    <div class="feat"><b>36 моделей</b><span>Цена за 1M токенов, контекст, назначение и рекомендация под задачу</span></div>
+    <div class="feat"><b>Экономия токенов</b><span>Что вырезать, чтобы промпт стал короче и точнее</span></div>
+  </div>
+
+  <div class="install">
+    <span class="tag t-green">Плагин</span>
+    <h2 style="margin-top:10px">Тот же тренер — внутри OpenCode</h2>
+    <p>Пилюля <code>Coach 72/100</code> над композером, панель с разбором, кнопка
+      «Improve with LLM», команды <code>/coach</code> и <code>/usage</code>. Работает в
+      OpenCode Desktop и в терминале.</p>
+    <ol>
+      <li>Скачайте репозиторий: <b>Code → Download ZIP</b> и распакуйте целиком.</li>
+      <li>Запустите <b>installer\install.cmd</b> двойным щелчком.</li>
+      <li>Дождитесь <b>ГОТОВО</b>, перезапустите OpenCode и введите <code>/coach</code>.</li>
+    </ol>
+    <p style="margin-bottom:0">Установщик сам выберет путь без кириллицы, поставит зависимости
+      и пропишет плагин в конфиг. Лог: <code>%TEMP%\prompt-coach-install.log</code>.</p>
+  </div>
+
+  <footer>
+    MIT · <a href="https://github.com/USERNAME/prompt-coach">исходники на GitHub</a>
+  </footer>
+</div>
+</body>
+</html>

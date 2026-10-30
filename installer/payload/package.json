@@ -1,0 +1,18 @@
+{
+  "name": "opencode-prompt-coach",
+  "version": "0.1.0",
+  "description": "Prompt Coach: real-time prompt quality analysis for OpenCode",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tui": "./src/tui.tsx",
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.2.0",
+    "@opentui/core": "0.7.0",
+    "@opentui/solid": "0.7.0",
+    "solid-js": "1.9.17"
+  }
+}

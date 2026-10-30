@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Полный гайд по Вайбкодингу с OpenCode</title>
+<meta name="description" content="Подробный гайд для начинающих: OpenCode, подключение провайдеров, OpenRouter, подписки Go/Zen, модели и экономия токенов.">
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --bg-2: #fbfbfd;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --muted-2: #86868b;
+    --accent: #0071e3;
+    --accent-dark: #0058b0;
+    --accent-soft: #e8f1fb;
+    --green: #34c759;
+    --green-soft: #eaf7ed;
+    --orange: #ff9f0a;
+    --orange-soft: #fff4e5;
+    --red: #ff3b30;
+    --red-soft: #fdecea;
+    --border: #d2d2d7;
+    --border-soft: #e5e5ea;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-pill: 999px;
+    --maxw: 1180px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; display: block; }
+  code {
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.92em;
+    background: #f0f0f5;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: #1d1d1f;
+  }
+  pre {
+    background: #1d1d1f;
+    color: #f5f5f7;
+    padding: 18px 20px;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  .container { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .hero {
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);
+    padding: 72px 24px 48px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+    line-height: 1.1;
+  }
+  .hero p {
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: var(--muted);
+    max-width: 760px;
+    margin: 0 auto 26px;
+  }
+  .hero .cta-row {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: var(--radius-pill);
+    font-weight: 600; font-size: 0.95rem;
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dark); text-decoration: none; }
+  .btn-secondary { background: #fff; color: var(--accent); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--accent-soft); text-decoration: none; }
+  .btn:active { transform: scale(0.98); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
+    padding: 40px 24px 80px;
+    max-width: var(--maxw);
+    margin: 0 auto;
+  }
+  .toc {
+    position: sticky; top: 24px; align-self: start;
+    background: var(--card); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 18px 14px;
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .toc h4 { margin: 0 0 10px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-2); }
+  .toc ul { list-style: none; padding: 0; margin: 0; }
+  .toc li { margin: 2px 0; }
+  .toc a {
+    display: block; padding: 6px 10px; border-radius: 8px;
+    font-size: 0.9rem; color: var(--text);
+  }
+  .toc a:hover { background: var(--accent-soft); text-decoration: none; color: var(--accent); }
+  .toc .sub { padding-left: 22px; font-size: 0.85rem; color: var(--muted); }
+
+  main.content { min-width: 0; }
+  section { margin-bottom: 44px; }
+  .section-card {
+    background: var(--card); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 32px 36px;
+    box-shadow: var(--shadow); margin-bottom: 24px;
+  }
+  h2 {
+    font-size: 1.7rem; font-weight: 700; letter-spacing: -0.015em;
+    margin: 0 0 16px; scroll-margin-top: 24px;
+  }
+  h3 {
+    font-size: 1.2rem; font-weight: 600; margin: 24px 0 10px;
+    scroll-margin-top: 24px;
+  }
+  h4 { font-size: 1.02rem; font-weight: 600; margin: 18px 0 6px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .lead { font-size: 1.1rem; color: var(--muted); margin-bottom: 18px; }
+
+  .callout {
+    border-radius: var(--radius-sm); padding: 16px 18px;
+    margin: 16px 0; border: 1px solid var(--border-soft);
+    background: var(--bg-2);
+  }
+  .callout.tip { background: var(--green-soft); border-color: #cfead6; }
+  .callout.tip::before { content: "💡 Совет"; font-weight: 700; color: #1e7e34; display: block; margin-bottom: 4px; }
+  .callout.warn { background: var(--orange-soft); border-color: #f6dfb8; }
+  .callout.warn::before { content: "⚠️ Важно"; font-weight: 700; color: #a05a00; display: block; margin-bottom: 4px; }
+  .callout.info { background: var(--accent-soft); border-color: #c9ddf6; }
+  .callout.info::before { content: "ℹ️ Заметка"; font-weight: 700; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+  .callout.danger { background: var(--red-soft); border-color: #f5c6c2; }
+  .callout.danger::before { content: "🚨 Осторожно"; font-weight: 700; color: #c0392b; display: block; margin-bottom: 4px; }
+
+  .table-wrap { overflow-x: auto; margin: 14px 0; border-radius: var(--radius-sm); border: 1px solid var(--border-soft); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 640px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+  th { background: #f5f5f7; font-weight: 600; color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafc; }
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: var(--radius-pill);
+    font-size: 0.75rem; font-weight: 600; margin: 2px 2px 2px 0;
+  }
+  .badge-blue { background: var(--accent-soft); color: var(--accent-dark); }
+  .badge-green { background: var(--green-soft); color: #1e7e34; }
+  .badge-orange { background: var(--orange-soft); color: #a05a00; }
+  .badge-gray { background: #f0f0f5; color: var(--muted); }
+
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm); padding: 20px; box-shadow: var(--shadow);
+  }
+  .card h4 { margin-top: 0; }
+  .card .price { font-size: 1.6rem; font-weight: 700; color: var(--accent); margin: 6px 0; }
+
+  .step {
+    display: flex; gap: 14px; margin: 12px 0;
+  }
+  .step-num {
+    flex: 0 0 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; }
+
+  .footer {
+    background: #1d1d1f; color: #f5f5f7; padding: 48px 24px;
+    margin-top: 40px;
+  }
+  .footer .container { max-width: var(--maxw); }
+  .footer h4 { color: #fff; margin-top: 0; }
+  .footer a { color: #a1a1a6; }
+  .footer a:hover { color: #fff; }
+  .footer-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; }
+  @media (max-width: 720px) { .footer-grid { grid-template-columns: 1fr; } }
+
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; padding: 24px 16px 60px; }
+    .toc { position: static; max-height: none; }
+    .section-card { padding: 22px 20px; }
+  }
+  .mobile-toc-toggle {
+    display: none;
+  }
+  @media (max-width: 980px) {
+    .mobile-toc-toggle {
+      display: block; width: 100%; margin-bottom: 16px;
+      background: var(--card); border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm); padding: 12px 16px;
+      font-weight: 600; cursor: pointer; text-align: left;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <span class="eyebrow">Вайбкодинг · OpenCode · 2026</span>
+    <h1>Полный гайд по Вайбкодингу с OpenCode</h1>
+    <p>Всё в одном месте: что такое OpenCode, к чему его подключить, полный разбор OpenRouter, подписки Go и Zen, сравнение моделей и 30+ способов экономить токены и не уходить за лимиты. Просто, как для чайника.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#start">Начать с нуля</a>
+      <a class="btn btn-secondary" href="#toc">Оглавление</a>
+    </div>
+  </div>
+</header>
+
+<div class="layout" id="toc">
+  <aside class="toc">
+    <h4>Оглавление</h4>
+    <ul>
+      <li><a href="#vibe">0. Вайбкодинг: как работать с агентом</a></li>
+      <li><a href="#intro">1. Что такое Вайбкодинг и OpenCode</a></li>
+      <li><a href="#install" class="sub">Установка за 2 минуты</a></li>
+      <li><a href="#config" class="sub">Конфигурация</a></li>
+      <li><a href="#connect">2. К чему подключить OpenCode</a></li>
+      <li><a href="#providers" class="sub">Провайдеры и модели</a></li>
+      <li><a href="#mcp" class="sub">MCP-серверы</a></li>
+      <li><a href="#plugins" class="sub">Плагины, навыки, агенты</a></li>
+      <li><a href="#local" class="sub">Локальные модели</a></li>
+      <li><a href="#openrouter">3. OpenRouter — полный гайд</a></li>
+      <li><a href="#or-setup" class="sub">Подключение к OpenCode</a></li>
+      <li><a href="#or-features" class="sub">Фишки и маршрутизация</a></li>
+      <li><a href="#or-pricing" class="sub">Тарифы и комиссии</a></li>
+      <li><a href="#or-free" class="sub">Бесплатные модели</a></li>
+      <li><a href="#subs">4. Подписки OpenCode Go и Zen</a></li>
+      <li><a href="#go" class="sub">OpenCode Go ($10/$40)</a></li>
+      <li><a href="#zen" class="sub">OpenCode Zen (pay-as-you-go)</a></li>
+      <li><a href="#compare" class="sub">Сравнение вариантов</a></li>
+      <li><a href="#models">5. Модели: какая для чего</a></li>
+      <li><a href="#models-table" class="sub">Таблица моделей</a></li>
+      <li><a href="#models-rec" class="sub">Рекомендации по задачам</a></li>
+      <li><a href="#save">6. Экономия токенов и лимитов</a></li>
+      <li><a href="#strategies" class="sub">Стратегии экономии</a></li>
+      <li><a href="#limits" class="sub">Не уходить за лимиты</a></li>
+      <li><a href="#antipatterns" class="sub">Антипаттерны</a></li>
+      <li><a href="#checklist">7. Чек-лист старта</a></li>
+      <li><a href="#faq">8. Частые вопросы</a></li>
+    </ul>
+  </aside>
+
+  <main class="content">
+
+    <!-- 1. INTRO -->
+    <section id="intro">
+      <div class="section-card">
+        <h2>1. Что такое Вайбкодинг и OpenCode</h2>
+        <p class="lead">Вайбкодинг — это когда вы описываете задачу на обычном языке, а AI-агент сам пишет, запускает и правит код. OpenCode — это бесплатный open-source агент, который работает в терминале, как приложение и как расширение для редактора. Он не привязан к одной модели: можно подключить 75+ провайдеров и менять модель под задачу.</p>
+
+        <h3>Почему OpenCode, а не Cursor/Copilot?</h3>
+        <ul>
+          <li><b>Модель-независимый.</b> Хотите Claude сегодня, DeepSeek завтра, локальную модель послезавтра — один и тот же инструмент.</li>
+          <li><b>Бесплатный инструмент.</b> Платите только за токены модели (или $0, если локально). Нет подписки за саму программу.</li>
+          <li><b>Open source (MIT).</b> 150k+ звёзд на GitHub, можно читать, форкать, расширять.</li>
+          <li><b>Архитектура клиент-сервер.</b> Go-TUI + Bun/JS HTTP-сервер. Несколько интерфейсов (терминал, десктоп, VS Code) могут подключаться к одному серверу.</li>
+          <li><b>Git-снапшоты и /undo /redo.</b> Агент делает снимок перед изменениями — откатить легко.</li>
+          <li><b>LSP-диагностика.</b> После правок агент видит ошибки компилятора и сам их исправляет.</li>
+          <li><b>Хранение в SQLite.</b> История разговоров локальная, переносимая.</li>
+        </ul>
+
+        <div class="callout info">
+          OpenCode не «обёртка» вокруг Claude или GPT. Это <b>harness (обвязка)</b>, а мозги (модель) вы приносите сами. Именно поэтому смена модели — это смена одной строчки в конфиге.
+        </div>
+
+        <h3 id="install">Установка за 2 минуты</h3>
+        <p><b>Linux / macOS (одна команда):</b></p>
+        <pre><code>curl -fsSL https://opencode.ai/install | bash</code></pre>
+        <p><b>Windows:</b> скачайте приложение с <a href="https://opencode.ai">opencode.ai</a> или установите через npm:</p>
+        <pre><code>npm i -g opencode-ai</code></pre>
+        <p><b>Проверка:</b></p>
+        <pre><code>opencode --version
+opencode service status</code></pre>
+        <p><b>Запуск в проекте:</b></p>
+        <pre><code>cd my-project
+opencode</code></pre>
+
+        <h3 id="config">Конфигурация (opencode.json)</h3>
+        <p>Глобальная: <code>~/.config/opencode/opencode.json(c)</code>. Проектная: <code>opencode.json(c)</code> или <code>.opencode/opencode.json(c)</code> в корне. OpenCode ищет конфиги во всех родительских папках и мержит их.</p>
+        <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/anthropic/claude-sonnet-4.5",
+  "default_agent": "build",
+  "permissions": { "bash": "ask", "edit": "allow" }
+}</code></pre>
+        <div class="callout tip">
+          Изменения применяются без перезапуска — OpenCode следит за файлами. Принудительная перезагрузка: <code>/reload</code>.
+        </div>
+
+        <h4>Полезные слэш-команды</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Команда</th><th>Что делает</th></tr>
+            <tr><td><code>/connect</code></td><td>Подключить провайдера (ввести API-ключ)</td></tr>
+            <tr><td><code>/models</code></td><td>Список доступных моделей</td></tr>
+            <tr><td><code>/mcps</code></td><td>Управление MCP-серверами, вход OAuth</td></tr>
+            <tr><td><code>/reload</code></td><td>Перезагрузить конфиг</td></tr>
+            <tr><td><code>/undo</code> / <code>/redo</code></td><td>Откатить/вернуть изменения агента</td></tr>
+            <tr><td><code>/init</code></td><td>Инициализировать проект (создать AGENTS.md)</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CONNECT -->
+    <section id="connect">
+      <div class="section-card">
+        <h2>2. К чему можно подключить OpenCode</h2>
+        <p class="lead">OpenCode умеет работать с 75+ провайдерами. Можно использовать готовые подписки (GitHub Copilot, ChatGPT Plus/Pro), прямые API-ключи, шлюзы (OpenRouter) и локальные модели.</p>
+
+        <h3 id="providers">Провайдеры и модели</h3>
+        <div class="grid grid-3">
+          <div class="card">
+            <h4>Anthropic</h4>
+            <p>Claude Opus/Sonnet/Haiku. Лучшее для кодинга и агентов. Прямой ключ или через Zen/Go.</p>
+            <span class="badge badge-blue">Frontier</span>
+          </div>
+          <div class="card">
+            <h4>OpenAI</h4>
+            <p>GPT-5.x, GPT-6 Luna. ChatGPT Plus/Pro можно использовать через логин.</p>
+            <span class="badge badge-blue">Frontier</span>
+          </div>
+          <div class="card">
+            <h4>Google</h4>
+            <p>Gemini 2.5/3.x Flash и Pro. Огромный контекст (1M токенов). Есть бесплатный тир.</p>
+            <span class="badge badge-green">Дешево</span>
+          </div>
+          <div class="card">
+            <h4>xAI</h4>
+            <p>Grok 4.x. Сильный на сложных задачах, но квота быстро сгорает.</p>
+            <span class="badge badge-orange">Дорого</span>
+          </div>
+          <div class="card">
+            <h4>DeepSeek</h4>
+            <p>V4 Flash/Pro. Очень дёшево, отлично для кода и рассуждений.</p>
+            <span class="badge badge-green">Бюджет</span>
+          </div>
+          <div class="card">
+            <h4>GitHub Copilot</h4>
+            <p>Можно залогиниться GitHub-аккаунтом и использовать Copilot-подписку прямо в OpenCode.</p>
+            <span class="badge badge-gray">Подписка</span>
+          </div>
+        </div>
+
+        <h3 id="mcp">MCP-серверы (инструменты для агента)</h3>
+        <p>MCP (Model Context Protocol) позволяет подключать внешние инструменты: базы данных, GitHub, Slack, браузер, файловые системы, Railway и т.д. Агент сможет сам вызывать эти инструменты.</p>
+        <pre><code>opencode mcp add &lt;name&gt; --global --url &lt;remote-url&gt;
+opencode mcp list</code></pre>
+        <div class="callout info">
+          Удалённые серверы по умолчанию используют OAuth. Если <code>mcp list</code> просит авторизацию — запустите <code>/mcps</code>, выберите сервер и войдите. Не запускайте <code>opencode mcp auth</code> через shell — он интерактивный.
+        </div>
+        <p>Примеры MCP: GitHub (issues/PR), Postgres, filesystem, fetch (веб), Playwright (браузер), Railway, Sentry. Ключи храните через <code>{env:MCP_API_KEY}</code>, не в конфиге.</p>
+
+        <h3 id="plugins">Плагины, навыки (skills) и агенты</h3>
+        <ul>
+          <li><b>Плагины</b> — расширяют TUI и сервер: хуки, трансформы, свои инструменты. Лежат в <code>.opencode/plugins</code> или пакетами.</li>
+          <li><b>Навыки (skills)</b> — папки с <code>SKILL.md</code>, которые агент подгружает по задаче. Удобно для повторяющихся процессов (деплой, тесты, код-ревью).</li>
+          <li><b>Агенты</b> — можно завести специализированных: <code>build</code>, <code>plan</code>, кастомные с своими промптами и разрешениями.</li>
+          <li><b>Команды</b> — свои слэш-команды в конфиге.</li>
+          <li><b>Форматтеры и LSP</b> — автоформатирование и диагностика после правок.</li>
+        </ul>
+
+        <h3 id="local">Локальные модели (бесплатно, офлайн, приватно)</h3>
+        <p>OpenCode работает с Ollama и LM Studio. Идеально для приватного кода и офлайна.</p>
+        <pre><code># Установить Ollama, скачать модель
+ollama pull qwen2.5-coder:14b
+# В OpenCode: /connect -> Ollama, или указать в конфиге
+"model": "ollama/qwen2.5-coder:14b"</code></pre>
+        <div class="callout tip">
+          Локальная модель стоит $0 за токен, но нужна видеокарта (8-16 ГБ VRAM для 7-14B моделей). Качество ниже frontier, но для рутины и приватного кода — отлично.
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. OPENROUTER -->
+    <section id="openrouter">
+      <div class="section-card">
+        <h2>3. OpenRouter — полный гайд</h2>
+        <p class="lead">OpenRouter — это единый шлюз к 400+ моделям от 60+ провайдеров через один API-ключ и один endpoint (OpenAI-совместимый). Не нужно заводить 10 аккаунтов — один ключ, один счёт, и вы можете менять модель одной строчкой.</p>
+
+        <h3>Зачем нужен OpenRouter</h3>
+        <ul>
+          <li><b>Один ключ на всё.</b> Claude, GPT, Gemini, DeepSeek, Llama, Grok — всё через один API.</li>
+          <li><b>Умная маршрутизация.</b> Если провайдер упал или упёрся в лимит — автоматический failover на другой.</li>
+          <li><b>Экономия.</b> По умолчанию выбирается самый дешёвый стабильный провайдер для модели. Есть <code>:floor</code>, <code>:nitro</code>, auto-router.</li>
+          <li><b>Сравнение моделей.</b> Удобно тестировать разные модели на одной задаче.</li>
+          <li><b>Бесплатные модели.</b> 20+ моделей по $0/токен.</li>
+        </ul>
+
+        <h3 id="or-setup">Подключение OpenRouter к OpenCode</h3>
+        <ol>
+          <li>Зарегистрируйтесь на <a href="https://openrouter.ai">openrouter.ai</a>, создайте API-ключ.</li>
+          <li>В OpenCode: <code>/connect</code> → выберите <b>OpenRouter</b> → вставьте ключ.</li>
+          <li>Выберите модель: <code>/models</code> или в конфиге:</li>
+        </ol>
+        <pre><code>"model": "openrouter/anthropic/claude-sonnet-4.5"
+// или дешёвый вариант:
+"model": "openrouter/deepseek/deepseek-v4.1-flash"</code></pre>
+
+        <h3 id="or-features">Фишки маршрутизации (главное для экономии)</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Суффикс/параметр</th><th>Что делает</th></tr>
+            <tr><td><code>:floor</code></td><td>Всегда самый дешёвый провайдер для этой модели. Пример: <code>anthropic/claude-sonnet-4.5:floor</code></td></tr>
+            <tr><td><code>:nitro</code></td><td>Самый быстрый провайдер (низкая задержка).</td></tr>
+            <tr><td><code>openrouter/auto</code></td><td>Auto Router: сам выбирает модель по задаче. Параметр <code>cost_tier</code> (low/medium/high/xhigh/max), по умолчанию low.</td></tr>
+            <tr><td><code>openrouter/pareto-code</code></td><td>Pareto Code Router: tiered-список кодинг-моделей, параметр <code>min_coding_score</code> (0-1).</td></tr>
+            <tr><td><code>provider.sort: price</code></td><td>Маршрутизация к самому дешёвому провайдеру (по умолчанию).</td></tr>
+            <tr><td><code>provider.max_price</code></td><td>Жёсткий потолок цены: если никто не укладывается — запрос падает, а не тратит деньги.</td></tr>
+            <tr><td><code>provider.ignore</code></td><td>Исключить конкретного провайдера.</td></tr>
+            <tr><td><code>quantizations</code></td><td>Фильтр по точности (fp16/bf16) — исключить квантованные endpoint'ы.</td></tr>
+            <tr><td><code>preferredMinThroughput</code></td><td>Минимальная пропускная способность (p90) — не брать слишком медленных.</td></tr>
+            <tr><td>Fallback-цепочка</td><td>Передать массив <code>models</code>: сначала дешёвый, потом дороже. Escalation при неудаче.</td></tr>
+          </table>
+        </div>
+
+        <h4>Prompt caching (очень важно для экономии)</h4>
+        <p>На поддерживаемых моделях (DeepSeek R1, Claude, Gemini и др.) повторяющийся контекст кэшируется. Эффективная цена падает на 60-80%. Условия:</p>
+        <ul>
+          <li>Стабильный префикс промпта (системный промпт + контекст проекта в начале).</li>
+          <li>Передавать один и тот же <code>x-opencode-session</code> / session ID — OpenRouter использует sticky routing, чтобы держать диалог на одном endpoint'е.</li>
+          <li>Не менять начало промпта между запросами.</li>
+        </ul>
+
+        <h4>BYOK (свои ключи через OpenRouter)</h4>
+        <p>Можно подключить свои ключи провайдеров через OpenRouter — получите routing + failover + аналитику. Комиссия: 5% сверху, но в рамках бесплатного лимита (1M запросов/мес) — без комиссии. Выгодно только если ваша прямая цена минус 5% ниже каталогной цены OpenRouter.</p>
+
+        <h3 id="or-pricing">Тарифы и комиссии OpenRouter</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Тир</th><th>Цена</th><th>Лимиты</th><th>Для кого</th></tr>
+            <tr><td><b>Free</b></td><td>$0</td><td>20 req/min, 50 req/day (1000/день при $10+ кредитов)</td><td>Прототипы, тесты</td></tr>
+            <tr><td><b>Pay-as-you-go</b></td><td>5.5% fee на покупку кредитов</td><td>Стандартные per-model</td><td>Низкий-средний объём</td></tr>
+            <tr><td><b>Enterprise</b></td><td>По договору</td><td>Договорные</td><td>SSO/SAML, SLA, поддержка</td></tr>
+          </table>
+        </div>
+        <div class="callout warn">
+          <b>Скрытые расходы:</b> 5.5% комиссия на покупку кредитов ($0.80 минимум), 5% на BYOK выше 1M запросов/мес, крипто-платежи 5%. Кредиты сгорают через 1 год. При расчёте бюджета закладывайте 5.5% сверху.
+        </div>
+
+        <h3 id="or-free">Бесплатные модели OpenRouter</h3>
+        <p>20+ моделей по $0/токен: Llama 3.3 70B, Qwen3 Coder, GPT-OSS 120B, NVIDIA Nemotron 3 Super, Gemini 2.0 Flash, DeepSeek R1, Mistral Devstral (123B) и др. Лимиты: 50 req/day без кредитов, 1000/day при $10+ балансе, 20 req/min.</p>
+        <pre><code>// Использование бесплатной модели:
+"model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"</code></pre>
+        <div class="callout tip">
+          Бесплатные модели идеальны для прототипов и обучения. Для продакшена — платные (стабильнее и без логирования промптов).
+        </div>
+
+        <h3>Таблица цен популярных моделей (OpenRouter, $ за 1M токенов)</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Модель</th><th>Input</th><th>Output</th><th>Контекст</th><th>Для чего</th></tr>
+            <tr><td>Claude Opus 5.5</td><td>$4.00</td><td>$20.00</td><td>1M</td><td>Архитектура, сложные рефакторы</td></tr>
+            <tr><td>Claude Sonnet 4.5</td><td>$3.00</td><td>$15.00</td><td>200K</td><td>Основная разработка</td></tr>
+            <tr><td>GPT-4o</td><td>$2.50</td><td>$10.00</td><td>128K</td><td>Мультимодальность, JSON</td></tr>
+            <tr><td>Gemini 2.5 Flash</td><td>$0.15</td><td>$0.60</td><td>1M</td><td>Длинный контекст, дёшево</td></tr>
+            <tr><td>DeepSeek V3.2</td><td>$0.27</td><td>$1.10</td><td>128K</td><td>Код, логика, математика</td></tr>
+            <tr><td>Qwen 2.5 Coder 32B</td><td>$0.18</td><td>$0.22</td><td>128K</td><td>Кодогенерация</td></tr>
+            <tr><td>Llama 3.3 70B</td><td>$0.13</td><td>$0.40</td><td>128K</td><td>Общие задачи</td></tr>
+            <tr><td>Mistral Nemo</td><td>$0.03</td><td>$0.05</td><td>128K</td><td>Классификация, суммаризация</td></tr>
+            <tr><td>Kimi K2.5</td><td>$0.45</td><td>$1.80</td><td>262K</td><td>Длинный контекст RU/EN</td></tr>
+            <tr><td>GLM 5.3</td><td>$0.08</td><td>$1.40</td><td>1M</td><td>Дешёвый флагман</td></tr>
+            <tr><td>DeepSeek V4.1 Flash</td><td>$0.02</td><td>$1.00</td><td>1M</td><td>Объёмная рутина</td></tr>
+            <tr><td>GPT-6 Luna</td><td>$0.10</td><td>$0.50</td><td>1.1M</td><td>Бюджетный OpenAI</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SUBSCRIPTIONS -->
+    <section id="subs">
+      <div class="section-card">
+        <h2>4. Подписки OpenCode Go и Zen</h2>
+        <p class="lead">У OpenCode есть два своих варианта монетизации: Go (подписка с квотами) и Zen (pay-as-you-go с прозрачными ценами). Оба можно использовать не только в OpenCode, но и в других агентах.</p>
+
+        <h3 id="go">OpenCode Go — $10/мес (Go Plus $40/мес)</h3>
+        <p>Один ключ — 31+ модель (GPT 6 Luna, Claude Haiku 5.5, Grok 4.7, GLM-5.3, DeepSeek V4.1 Flash, Kimi K2.7/K3, MiniMax M3, Qwen3.8, MiMo и др.). Идеально, если не хочется управлять ключами и биллингом.</p>
+        <div class="grid grid-2">
+          <div class="card">
+            <h4>Go</h4>
+            <div class="price">$10/мес</div>
+            <p>$5 первый месяц. Лимиты ниже. Для дополнительного использования.</p>
+          </div>
+          <div class="card">
+            <h4>Go Plus</h4>
+            <div class="price">$40/мес</div>
+            <p>В 4 раза выше лимиты. Для активной ежедневной работы.</p>
+          </div>
+        </div>
+
+        <h4>Система лимитов (трёхуровневая)</h4>
+        <ul>
+          <li><b>5-часовой лимит</b> = 20% месячного.</li>
+          <li><b>Недельный лимит</b> = 50% месячного.</li>
+          <li><b>Месячный лимит</b> = 100%.</li>
+        </ul>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Модель</th><th>Запросов / 5ч</th><th>Месячный лимит ($)</th><th>Примечание</th></tr>
+            <tr><td>DeepSeek V4.1 Flash</td><td>~34 670</td><td>$80</td><td>Объёмный король</td></tr>
+            <tr><td>MiMo-V2.6-Flash</td><td>~30 100</td><td>$60-$120</td><td>Большой объём</td></tr>
+            <tr><td>GLM-5.3-Flash</td><td>~6 300</td><td>$60</td><td>Рабочая лошадка</td></tr>
+            <tr><td>GPT 6 Luna</td><td>~4 230</td><td>$15-$60</td><td>Бюджетный OpenAI</td></tr>
+            <tr><td>MiniMax M3.1 Flash</td><td>~3 880</td><td>$20-$80</td><td>Быстрая</td></tr>
+            <tr><td>Claude Haiku 5.5</td><td>~3 850</td><td>$15-$60</td><td>Anthropic fast</td></tr>
+            <tr><td>MiniMax M3</td><td>~3 200</td><td>$60-$180</td><td>Агентная</td></tr>
+            <tr><td>Kimi K2.7 Code</td><td>~1 350</td><td>$60-$180</td><td>Кодинг-версия</td></tr>
+            <tr><td>Grok 4.7</td><td>мало</td><td>$15-$60</td><td>Для сложных задач, сжигает квоту</td></tr>
+            <tr><td>Kimi K3.1 Pro</td><td>мало</td><td>$15-$60</td><td>Флагман Moonshot</td></tr>
+            <tr><td>GLM-5.3</td><td>мало</td><td>$15</td><td>Флагман Zhipu</td></tr>
+            <tr><td>Beam Free / Iceman Free</td><td>∞</td><td>∞</td><td>Промо, ограниченное время</td></tr>
+          </table>
+        </div>
+        <div class="callout warn">
+          Go <b>не</b> для full-time кодинга весь день — лимиты сгорают за дни при активной работе. Это отличный «Plan B» и дополнение к основной подписке. При исчерпании лимитов: переключиться на бесплатную Big Pickle или включить баланс Zen (нужен отдельный топ-ап $20).
+        </div>
+
+        <h3 id="zen">OpenCode Zen — pay-as-you-go</h3>
+        <p>Zen — это каталог моделей с прозрачными ценами и <b>нулевой наценкой</b>. Платите только за токены. Нет квот и месячных лимитов. Есть временные бесплатные модели ($0/$0). Auto-reload: $20 + комиссия карты.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Модель</th><th>Input /1M</th><th>Output /1M</th></tr>
+            <tr><td>Big Pickle / MiMo-V2.5 Free (временные)</td><td>$0.00</td><td>$0.00</td></tr>
+            <tr><td>GPT 5.6 Luna</td><td>$0.20</td><td>$1.20</td></tr>
+            <tr><td>Claude Sonnet 5</td><td>$2.00</td><td>$10.00</td></tr>
+            <tr><td>Claude Opus 5.5 (batch)</td><td>$2.00</td><td>$10.00</td></tr>
+            <tr><td>GPT 5.5 Pro</td><td>$30.00</td><td>$180.00</td></tr>
+            <tr><td>Gemini 4 Argon (50% скидка до 30.11.2026)</td><td>$2.00</td><td>$10.00</td></tr>
+            <tr><td>Qwen3.8 Max</td><td>$2.00</td><td>$6.00</td></tr>
+            <tr><td>GLM 5.3 Flash</td><td>$0.15</td><td>$0.50</td></tr>
+          </table>
+        </div>
+        <div class="callout tip">
+          Zen хорош, когда нужна конкретная тяжёлая модель (Opus, GPT-5.5 Pro) без подписки. Тихий месяц стоит $0 — ни одна подписка так не умеет.
+        </div>
+
+        <h3 id="compare">Сравнение вариантов</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Вариант</th><th>Цена</th><th>Модели</th><th>Лимиты</th><th>Лучше для</th></tr>
+            <tr><td><b>OpenCode Go</b></td><td>$10/мес</td><td>31+ open-моделей</td><td>5h/week/month квоты</td><td>Дополнительное использование, бюджет</td></tr>
+            <tr><td><b>OpenCode Zen</b></td><td>Pay-as-you-go</td><td>Весь каталог Zen</td><td>Нет квот</td><td>Тяжёлые модели, нерегулярное использование</td></tr>
+            <tr><td><b>OpenRouter</b></td><td>5.5% fee</td><td>400+ моделей</td><td>20 rpm / 50-1000 req/day (free)</td><td>Разнообразие, fallback, тесты</td></tr>
+            <tr><td><b>Прямые ключи</b></td><td>По тарифу провайдера</td><td>Одна экосистема</td><td>По провайдеру</td><td>Максимальная экономия на конкретной модели</td></tr>
+            <tr><td><b>Локально (Ollama)</b></td><td>$0</td><td>Open-weight</td><td>Нет (GPU)</td><td>Приватность, офлайн, рутина</td></tr>
+            <tr><td><b>GitHub Copilot / ChatGPT</b></td><td>Существующая подписка</td><td>Copilot/OpenAI</td><td>По подписке</td><td>Если уже платите</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MODELS -->
+    <section id="models">
+      <div class="section-card">
+        <h2>5. Модели: какая для чего</h2>
+        <p class="lead">Главный принцип экономии: <b>не нанимать хирурга ставить пластырь</b>. 90% задач (правки, тесты, рефакторинг, документация) отлично делают дешёвые модели. Дорогие оставляйте для архитектуры и сложных багов.</p>
+
+        <h3 id="models-table">Таблица моделей по уровням</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Уровень</th><th>Модели</th><th>Сильные стороны</th><th>Цена</th></tr>
+            <tr>
+              <td><span class="badge badge-orange">Frontier</span></td>
+              <td>Claude Opus 4.8/5.5, GPT-5.5 Pro, Gemini 3.1 Pro, Grok 4.7</td>
+              <td>Архитектура, сложные рефакторы, агентные задачи, длинные рассуждения</td>
+              <td>$$$$</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-blue">Сбалансированные</span></td>
+              <td>Claude Sonnet 4.5/5, GPT-5-mini/6 Luna, Gemini 2.5 Flash/Pro, DeepSeek V4 Pro, Kimi K2.6/K2.7 Code, GLM-5.3, MiniMax M3/M2.7, Qwen3.7/3.8 Plus/Max</td>
+              <td>Повседневная разработка, код-ревью, тесты, tool calling</td>
+              <td>$$</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-green">Бюджетные/объём</span></td>
+              <td>DeepSeek V4.1 Flash, GLM-5.3-Flash, MiMo-V2.6-Flash, Qwen3.8 Flash, GPT-6 Luna, Llama 3.3 70B, Mistral Nemo</td>
+              <td>Рутина, документация, классификация, суммаризация, автокомплит</td>
+              <td>$</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-gray">Локальные</span></td>
+              <td>qwen2.5-coder, deepseek-coder, llama 3.3 70B, codellama</td>
+              <td>Приватность, офлайн, $0 токенов</td>
+              <td>$0</td>
+            </tr>
+          </table>
+        </div>
+
+        <h3 id="models-rec">Рекомендации по задачам</h3>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Задача</th><th>Рекомендуемая модель</th><th>Почему</th></tr>
+            <tr><td>Проектирование архитектуры</td><td>Claude Opus / GPT-5.5 Pro</td><td>Глубокие рассуждения, большой контекст</td></tr>
+            <tr><td>Повседневный код и рефакторинг</td><td>Claude Sonnet / MiniMax M3 / Kimi K2.7 Code</td><td>Баланс цена/качество, хорошее tool calling</td></tr>
+            <tr><td>Написание тестов и документации</td><td>DeepSeek V4.1 Flash / GLM-5.3-Flash</td><td>Дёшево, достаточно качества</td></tr>
+            <tr><td>Классификация, роутинг, суммаризация</td><td>Mistral Nemo / Llama 3.3 70B</td><td>Микро-цена</td></tr>
+            <tr><td>Длинные документы / большой контекст</td><td>Gemini 2.5 Flash (1M) / Kimi K2.5</td><td>Огромное окно контекста</td></tr>
+            <tr><td>Приватный/коммерческий код</td><td>Локальная qwen2.5-coder / DeepSeek через ZDR</td><td>Нет утечки данных</td></tr>
+            <tr><td>Агентные задачи с инструментами</td><td>Claude Sonnet / MiniMax M3 / GLM-5.3</td><td>Надёжный tool calling</td></tr>
+            <tr><td>Быстрый автокомплит</td><td>Claude Haiku / GPT-6 Luna</td><td>Низкая задержка</td></tr>
+          </table>
+        </div>
+
+        <div class="callout info">
+          <b>Модели с пометкой Contributor</b> (Gemini 4 Argon Contributor, Muse Spark Contributor) дают сильную скидку в обмен на разрешение использовать ваши промпты для обучения. Не используйте для проприетарного кода.
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. SAVE -->
+    <section id="save">
+      <div class="section-card">
+        <h2>6. Как экономить токены и не уходить за лимиты</h2>
+        <p class="lead">Экономия строится на трёх китах: правильный выбор модели, кэширование контекста и контроль объёма. Ниже — конкретные приёмы.</p>
+
+        <h3 id="strategies">Стратегии экономии токенов</h3>
+        <ol>
+          <li><b>Многоуровневая маршрутизация (fallback-цепочка).</b> Дешёвая модель по умолчанию, эскалация на дорогую только при неудаче: <code>Llama → Gemini Flash → Claude Sonnet → Claude Opus</code>.</li>
+          <li><b>Кэширование промптов.</b> Стабильный префикс (системный промпт + контекст проекта) + один session ID → экономия 60-80% на input-токенах.</li>
+          <li><b>Тримминг контекста.</b> Не отправляйте весь файл — только нужные функции. Короткие системные промпты. Резюме вместо полных документов.</li>
+          <li><b>Отключайте reasoning там, где не нужен.</b> Модели с reasoning тратят токены на «мысли». Для простых задач — non-reasoning вариант.</li>
+          <li><b>Один агент за раз.</b> Три параллельных сессии = 3x токенов. Запускайте параллельно только независимые задачи.</li>
+          <li><b>Используйте /undo вместо повторной генерации.</b> Если агент ошибся — откатите и уточните промпт, а не начинайте заново.</li>
+          <li><b>Batch-режимы.</b> Если провайдер поддерживает batch API — дешевле на 50%.</li>
+          <li><b>Квантованные endpoint'ы.</b> Дешевле, но проверяйте качество (фильтр <code>quantizations</code>).</li>
+          <li><b>Локальные модели для рутины.</b> $0 токенов, GPU один раз.</li>
+          <li><b>Бесплатные модели для прототипов.</b> 50-1000 req/day по $0.</li>
+        </ol>
+
+        <h4>Правило выбора модели по задаче (шпаргалка)</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Сложность задачи</th><th>Модель</th><th>Примерная цена/запрос</th></tr>
+            <tr><td>Тривиальная (форматирование, переименование)</td><td>Mistral Nemo / Llama 70B</td><td>&lt;$0.001</td></tr>
+            <tr><td>Простая (тесты, документация)</td><td>DeepSeek V4.1 Flash / GLM-Flash</td><td>$0.001-0.005</td></tr>
+            <tr><td>Средняя (фичи, багфиксы)</td><td>Claude Sonnet / MiniMax M3</td><td>$0.01-0.05</td></tr>
+            <tr><td>Сложная (архитектура, сложные баги)</td><td>Claude Opus / GPT-5.5 Pro</td><td>$0.10-0.50</td></tr>
+          </table>
+        </div>
+
+        <h3 id="limits">Как не уходить за лимиты</h3>
+        <ul>
+          <li><b>Понимайте лимиты Go:</b> 5-часовой (20%), недельный (50%), месячный (100%). Не сжигайте 20% за 5 часов утром — распределяйте.</li>
+          <li><b>Используйте дешёвые модели для объёма:</b> DeepSeek V4.1 Flash даёт 34 670 запросов/5ч — идеально для гринда.</li>
+          <li><b>Выключайте auto-reload (Zen) перед ночными/безлюдными запусками.</b> Иначе баланс станет бездонным. Сделайте баланс жёстким потолком.</li>
+          <li><b>Устанавливайте <code>max_price</code> в OpenRouter.</b> Запрос упадёт, а не потратит больше плана.</li>
+          <li><b>Мониторьте расход:</b> CostGoat, OpenRouter Activity, Zen/Go дашборды. Настраивайте алерты при спайках.</li>
+          <li><b>Считайте 5.5% комиссию OpenRouter.</b> $100 пополнения = $94.50 на инференс.</li>
+          <li><b>BYOK выгоден только при прямой цене ниже каталогной минус 5%.</b> Считайте перед переключением.</li>
+          <li><b>Кредиты OpenRouter сгорают через 1 год.</b> Не покупайте впрок.</li>
+          <li><b>Не используйте frontier-модели для рутины.</b> Это главная причина перерасхода.</li>
+          <li><b>Держите системный промпт коротким.</b> Каждый токен системного промпта множится на каждый запрос.</li>
+        </ul>
+
+        <h4>Настройка жёсткого потолка (пример)</h4>
+        <pre><code>// OpenRouter: не тратить больше $1 на prompt и $2 на completion
+"provider": { "max_price": { "prompt": 1, "completion": 2 } }
+
+// Zen: выключить auto-reload, пополнять вручную
+// Go: следить за 5h-лимитом, переключаться на Flash-модели при исчерпании</code></pre>
+
+        <h3 id="antipatterns">Антипаттерны (что НЕ делать)</h3>
+        <ul>
+          <li>❌ Использовать Claude Opus для форматирования кода или переименования переменных.</li>
+          <li>❌ Отправлять весь репозиторий в контекст «на всякий случай».</li>
+          <li>❌ Игнорировать prompt caching (менять начало промпта каждый раз).</li>
+          <li>❌ Держать auto-reload включённым при автономных ночных запусках.</li>
+          <li>❌ Плодить 5 параллельных сессий на дорогой модели.</li>
+          <li>❌ Покупать кредиты OpenRouter впрок (сгорят через год).</li>
+          <li>❌ Использовать Contributor-модели для проприетарного кода.</li>
+          <li>❌ Квантованные endpoint'ы для точных задач без проверки.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 0. VIBE CODING -->
+    <section id="vibe">
+      <div class="section-card">
+        <h2>0. Вайбкодинг: как правильно работать с агентом</h2>
+        <p class="lead">Вайбкодинг — это не «написал промпт и забыл». Это итеративный процесс: описали задачу → агент сделал → проверили diff → уточнили. Вот правила, которые экономят часы.</p>
+        <ul>
+          <li><b>Одна задача за раз.</b> «Добавь кнопку выхода» лучше, чем «сделай весь интерфейс».</li>
+          <li><b>Давайте контекст.</b> Укажите файлы, функции, ограничения. «В <code>src/auth.ts</code>, функция <code>login</code>, добавь проверку email».</li>
+          <li><b>Критерии успеха.</b> «Должен проходить тест <code>npm test</code>» — агент сам проверит.</li>
+          <li><b>Используйте AGENTS.md.</b> Создайте файл с правилами проекта (стиль, структура, запреты). OpenCode подгрузит его автоматически.</li>
+          <li><b>План-режим для сложного.</b> Сначала попросите агента составить план, потом выполняйте по шагам.</li>
+          <li><b>Проверяйте diff.</b> Всегда смотрите, что изменилось, перед коммитом. <code>/undo</code> — ваш друг.</li>
+          <li><b>Не плодите сессии.</b> Продолжайте диалог в одной сессии — контекст сохраняется и кэшируется.</li>
+          <li><b>Давайте примеры.</b> «Сделай как в <code>Button.tsx</code>, но для иконок» — работает лучше абстрактного описания.</li>
+        </ul>
+        <div class="callout tip">
+          Хороший промпт = Роль + Задача + Контекст + Ограничения + Критерий успеха. Пример: «Ты senior-разработчик. Добавь валидацию email в форму регистрации (src/Register.tsx). Не меняй стили. Тесты должны проходить.»
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. CHECKLIST -->
+    <section id="checklist">
+      <div class="section-card">
+        <h2>7. Чек-лист старта для чайника</h2>
+        <div class="step"><div class="step-num">1</div><div class="step-body"><b>Установите OpenCode</b> — одна команда (см. раздел 1).</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><b>Подключите провайдера</b> — <code>/connect</code>. Выберите OpenRouter (разнообразие) или Go (простота) или прямой ключ.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><b>Выберите модель</b> — <code>/models</code>. Для старта: Claude Sonnet или MiniMax M3 или DeepSeek V4.1 Flash.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><b>Откройте проект</b> — <code>cd project && opencode</code>. Запустите <code>/init</code> для создания AGENTS.md.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><b>Настройте конфиг</b> — модель по умолчанию, разрешения (bash/edit), formatter, LSP.</div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body"><b>Подключите MCP</b> (по желанию) — GitHub, filesystem, fetch. Через <code>opencode mcp add</code>.</div></div>
+        <div class="step"><div class="step-num">7</div><div class="step-body"><b>Настройте бюджет</b> — выключите auto-reload, поставьте max_price, выберите дешёвую модель по умолчанию.</div></div>
+        <div class="step"><div class="step-num">8</div><div class="step-body"><b>Начните с малого</b> — одна задача, одна сессия. Освойте /undo, /redo, /reload.</div></div>
+      </div>
+    </section>
+
+    <!-- 8. FAQ -->
+    <section id="faq">
+      <div class="section-card">
+        <h2>8. Частые вопросы</h2>
+        <h4>Нужна ли подписка, чтобы использовать OpenCode?</h4>
+        <p>Нет. OpenCode бесплатен. Есть бесплатные модели (OpenRouter free, OpenCode Go промо, локальные). Платите только если хотите конкретную модель.</p>
+        <h4>Что лучше: Go или Zen?</h4>
+        <p>Go — если хотите предсказуемый $10/мес и не думать о ключах (но лимиты сгорают). Zen — если нужна конкретная тяжёлая модель время от времени (платите только за использование).</p>
+        <h4>OpenRouter или прямой ключ?</h4>
+        <p>OpenRouter — если используете несколько моделей и нужен fallback. Прямой ключ — если сидите на одной модели и хотите минимум комиссий.</p>
+        <h4>Можно ли использовать OpenCode офлайн?</h4>
+        <p>Да, с локальными моделями через Ollama/LM Studio. Качество ниже, но $0 и приватно.</p>
+        <h4>Как откатить изменения агента?</h4>
+        <p><code>/undo</code> и <code>/redo</code>. OpenCode делает git-снапшот перед каждым изменением.</p>
+        <h4>Сколько стоит типичный день разработки?</h4>
+        <p>На дешёвых моделях (DeepSeek Flash, GLM-Flash) — центы. На Sonnet — $1-5. На Opus — $5-20. Зависит от объёма контекста и числа сессий.</p>
+        <h4>Безопасно ли давать агенту доступ к коду?</h4>
+        <p>OpenCode делает снапшоты и поддерживает разрешения (permissions). Для проприетарного кода используйте локальные модели или провайдеров с ZDR (zero data retention).</p>
+      </div>
+    </section>
+
+    <div class="section-card">
+      <h2>Источники</h2>
+      <ul>
+        <li><a href="https://opencode.ai">opencode.ai</a> — официальный сайт</li>
+        <li><a href="https://opencode.ai/v2/docs/">opencode.ai/v2/docs</a> — документация V2</li>
+        <li><a href="https://opencode.ai/go">opencode.ai/go</a> — OpenCode Go</li>
+        <li><a href="https://opencode.ai/zen">opencode.ai/zen</a> — OpenCode Zen</li>
+        <li><a href="https://openrouter.ai">openrouter.ai</a> — OpenRouter</li>
+        <li><a href="https://models.dev">models.dev</a> — реестр моделей</li>
+        <li><a href="https://github.com/anomalyco/opencode">github.com/anomalyco/opencode</a> — исходный код</li>
+      </ul>
+      <div class="callout info">
+        Данные актуальны на октябрь 2026. Цены, модели и лимиты меняются — проверяйте официальные страницы перед принятием решений.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>OpenCode Guide</h4>
+        <p style="color:#a1a1a6;">Полный гайд по Вайбкодингу: OpenCode, OpenRouter, Go, Zen, модели и экономия токенов.</p>
+      </div>
+      <div>
+        <h4>Разделы</h4>
+        <ul style="list-style:none;padding:0;">
+          <li><a href="#intro">Что такое OpenCode</a></li>
+          <li><a href="#connect">Подключение</a></li>
+          <li><a href="#openrouter">OpenRouter</a></li>
+          <li><a href="#subs">Подписки</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Ещё</h4>
+        <ul style="list-style:none;padding:0;">
+          <li><a href="#models">Модели</a></li>
+          <li><a href="#save">Экономия</a></li>
+          <li><a href="#checklist">Чек-лист</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <p style="color:#6e6e73; margin-top:32px; font-size:0.85rem;">© 2026 · Собрано на основе открытых источников · Не является официальной документацией.</p>
+  </div>
+</footer>
+
+<script>
+  // Highlight active TOC link on scroll
+  const links = document.querySelectorAll('.toc a');
+  const sections = [...links].map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.style.background = '');
+        const a = document.querySelector('.toc a[href="#' + e.target.id + '"]');
+        if (a) a.style.background = 'var(--accent-soft)';
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+# Windows-скрипты должны остаться с CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Явно текстовые
+*.md text
+*.html text
+*.json text
+*.ts text
+*.tsx text
+*.cjs text
+*.mjs text
+
+# Бинарные
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary

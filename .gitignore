@@ -1,0 +1,28 @@
+# OpenCode: локальное окружение, dev-копия плагина, сессии
+.opencode/
+
+# Зависимости
+node_modules/
+**/node_modules/
+
+# Сборка и кэш
+dist/*.map
+*.tsbuildinfo
+.cache/
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.bak
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Секреты (никогда не коммитить)
+.env
+.env.*
+!.env.example
